@@ -15,9 +15,9 @@ from itertools import product
 
 
 def CalculatePrimerFeatures(seq):
-    return [len(seq), seq.count('A'), seq.count('C'), seq.count('T'),seq.count('G'),seq.count('GC')]
+    return [len(seq), seq.count('A'), seq.count('C'), seq.count('T'),seq.count('G'),seq.count('GC')] # .95
 
-    return [len(seq)] + [seq.count(''.join(chars)) for i in range(1,6) for chars in product("ACTG",repeat=i)] # slower but .96
+    # return [len(seq)] + [seq.count(''.join(chars)) for i in range(1,4) for chars in product("ACTG",repeat=i)] # slower but .96
 
 
 def GetMeltingPoint(primer:str,melting_point_rf):
