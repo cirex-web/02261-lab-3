@@ -207,11 +207,53 @@ if __name__ == "__main__":
    """
 
 def generatePrimers(sequences):
-    #gattacas a bad movie
-    primers = [("GATTACA","ACTACAT")]
+    """
+        Given 3 sequences, select 3 different unique reverse primer starting
+        locations that meet the conditions listed below, and are of length 30.
+        The forward strand will start at the same location on all 3 strands.
+    """
 
+    import random
+    deliverable = []
+    for seq in sequences:
+        while True: 
+            #Generate a random (reverse complment)
+            n = len(seq)
+            rand_n = random.randint(30, n - 30)
+            s_1 = reverse_complement(seq[0:30])
+            s_2 = complement(seq[rand_n: rand_n + 30])
+            
+            # make sure that they satisfy melting point criterion
+            melting_point, melting_point_2 = GetMeltingPoint(s_1, task2_randomforest)
+            #  = GetMeltingPoint(s_2, task2_randomforest)
 
-    return primers
+            # and they don't bind to other strands
+            counter = 0
+            for s in sequences:
+                if s == seq: 
+                    # we want the primers to bind to seq.
+                    pass
+                # Use PCR product w/candidate primers: makes sure no product 
+                # will not be generated
+                if (PredictPCRProduct(s_1,s_2,s,melting_point) is None):
+                    counter == 1
+                    
+                """
+                for i in range(len(s) - 30):
+                    if complement(s_1) == s[i:i+30] or complement(s_2) == s[i:i+30]:
+                        counter = 1
+                """
+            if (melting_point <= 62 and melting_point >= 58 and 
+               melting_point_2 <= 62 and melting_point_2 >= 58 and counter == 0):
+                deliverable.append(s_1, s_2)
+                break
+        
+    return deliverable
+
+test = ["TGCAGTCGCTCGCGATGCTGCACCACCCTACAGAAAGTTGTCCTGCCTGACTGCGCTGCTGACTGACATCCGATCCAACGACATCAAGAGGCATCAATCGATGCTGCGTACGTCGACGT", "TGCAGTCGCTCGCGATGCTGCACCACCCTACAGAAAGTTGTCCTGCCTGACTGCGCTGCTGACTGACATCCGATCCAACGACATCAAGAGGCATCAATCGATGCTGCGTACGTCGACGT", 
+"TGCAGTCGCTCGCGATGCTGCACCACCCTACAGAAAGTTGTCCTGCCTGACTGCGCTGCTGACTGACATCCGATCCAACGACATCAAGAGGCATCAATCGATGCTGCGTACGTCGACGT"]
+print(generatePrimers(test))
+
    
    
 # R^2 - how good it is compared to a flat line .8 okay
