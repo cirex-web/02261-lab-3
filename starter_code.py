@@ -55,7 +55,7 @@ def complement(primer:str):
     comp_match = ''.join(complement[base] for base in primer)
     return comp_match
 
-def PredictPCRProduct(primer1, primer2, template_sequence, melting_point_rf):
+def PredictPCRProduct(primer1, primer2, template_sequence, melting_point_rf, skip_temp = False):
     """
     Input:
         primer1 = a primer sequence in 5' to 3' order
@@ -77,7 +77,7 @@ def PredictPCRProduct(primer1, primer2, template_sequence, melting_point_rf):
         
     #Fail any primers with conflicting melting points 
     melting_point_1, melting_point_2 = GetMeltingPoint(primer1,melting_point_rf), GetMeltingPoint(primer2,melting_point_rf)
-    if abs(melting_point_1-60)>2 or abs(melting_point_2-60)>2:
+    if not skip_temp and (abs(melting_point_1-60)>2 or abs(melting_point_2-60)>2):
         # print("temps not right",melting_point_1,melting_point_2)
         return None
         
@@ -100,6 +100,10 @@ actual_seqs = ["tcccggatgttagcggcggacgggtgagtaacacgtgggtaacctgcctgtaagactgggataa
 actual_seqs = [seq.upper() for seq in actual_seqs]
 def task_3(sequences,rf):
     def test_primer_validity(forward_primer,backward_primer):
+        for sequence in sequences:
+            product = PredictPCRProduct(forward_primer,backward_primer,sequence,rf,skip_temp=True)
+            if product is None:
+                return False
         for sequence in sequences:
             product = PredictPCRProduct(forward_primer,backward_primer,sequence,rf)
             if product is None:
