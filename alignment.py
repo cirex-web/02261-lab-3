@@ -104,7 +104,7 @@ def local_align(x, y, score=ScoreParam(10, -5, -7), print_output = False):
             )
 
             # track the cell with the largest score
-            if A[i][j] > best: # NOTE: changed from >= so that we get the first best occurence rather than the last
+            if A[i][j] > best: # NOTE: changed from >= so that we get the first best occurrence rather than the last
                 best = A[i][j]
                 optloc = (i,j)
     if print_output:

@@ -4,10 +4,11 @@ Created on Thu Oct  4 17:32:48 2018
 
 @author: jdkan
 """
-import time
 import alignment
-import copy
-from itertools import product
+from sklearn.metrics import r2_score
+from sklearn.ensemble import RandomForestRegressor
+
+
 # Your task is to *accurately* predict the primer melting points using machine 
 # learning based on the sequence of the primer.
 
@@ -71,13 +72,13 @@ def PredictPCRProduct(primer1, primer2, template_sequence, melting_point_rf):
     """
     #Fail any primers with length out of range 18-30 bp
     if(not ((18 <= len(primer1) <= 30) and (18 <= len(primer2) <= 30))):
-        print("Lengths not right!",len(primer1),len(primer2))
+        # print("Lengths not right!",len(primer1),len(primer2))
         return None
         
     #Fail any primers with conflicting melting points 
     melting_point_1, melting_point_2 = GetMeltingPoint(primer1,melting_point_rf), GetMeltingPoint(primer2,melting_point_rf)
     if abs(melting_point_1-60)>2 or abs(melting_point_2-60)>2:
-        print("temps not right",melting_point_1,melting_point_2)
+        # print("temps not right",melting_point_1,melting_point_2)
         return None
         
     #Check for binding on both primers
@@ -95,7 +96,27 @@ def PredictPCRProduct(primer1, primer2, template_sequence, melting_point_rf):
     
 
     return template_sequence[bottom_strand_match:top_strand_match+1]
+actual_seqs = ["tcccggatgttagcggcggacgggtgagtaacacgtgggtaacctgcctgtaagactgggataactccgggaaaccggagctaataccggatagttccttgaaccgcatggttcaaggatgaaagacggtttcggctgtcacttacagatggacccgcggcgcattagctagttggtgaggtaacggctcaccaaggcgacgatgcgtagccgacctgagagggtgatcggccacactgggactgagacacggcccagactcctacgggaggcagcagtagggaatcttccgcaatggacgaaagtctgacggagcaacgccgcgtgagtgatgaaggttttcggatcgtaaagctctgttgttagggaagaacaagtgcaagagtaactgcttgcaccttgacggtacctaaccagaaagccacggctaactacgtgccagcagccgcggtaatacgtaggtggcaagcgttgtccggAattattgggcgtAaagggctcgcaggcggtttcttaagtCtgatgtgaaagcccccggctcaaccggggagggtcattggaaactgggaaacttgagtgcagaagaggagagtggaattccacgtgtagcggtgaaatgcgtagagatgtggaggaacaccagtggcgaaggcgactctctggtctgtaactgacgctgaggagcgaaagcgtggggagcgaacaggattagataccctggtagtccacgccgtaaacgatgagtgctaagtgttagggggtttccgccccttagtgctgcagctaacgcattaagcactccgcctggggagtacggtcgcaagactgaaactcaaaggaattgacgggggcccgcacaagcggtggagcatgtggtttaattcgaagcaacgcgaagaaccttaccaggtcttgacatcctctgacaaccctagagatagggctttcccttcggggacagagtgacaggtggtgcatggttgtcgtcagctcgtgtcgtgagatgttgggttaagtcccgcaacgagcgcaacccttgatcttagttgccagcattcagttgggcactctaaggtgactgccggtgacaaaccggaggaaggtggggatgacgtcaaatcatcatgccccttatgacctgggctacacacgtgctacaatggacagaacaaagggctgcgagaccgcaaggtttagccaatcccacaaatctgttctcagttcggatcgcagtctgcaactcgactgcgtgaagctggaatcgctagtaatcgcggatcagcatgccgcggtgaatacgttcccgggccttgtacacaccgcccgtcacaccacgagagtttgcaacacccgaagtcggtgaggtaactttatggagccagcc","ggcgtgcctaatacatgcaagtcgagcggatcgatgggagcttgcnncntgagatcagcggcggacgggtgagtaacacgtgggtaacctgcctgtaagactgggataactccgggaaaccggggctaataccggataacacctacccccgcatgggggaaggttgaaaggtggcttcggctatcacttacagatggacccgcggcgcattagctagttggtgaggtaatggctcaccaaggcgacgatgcgtagccgacctgagagggtgatcggccacactgggactgagacacggcccagactcctacgggaggcagcagtagggaatcttccgcaatggacgaaagtctgacggagcaacgccgcgtgagtgaagaaggttttcggatcgtaaaactctgttgttagggaagaacaagtgccgttcgaatagggcggcgccttgacggtacctaaccagaaagccacggctaactacgtgccagcagccgcggtaatacgtaggtggcaagcgttgtccggaattattgggcgtaaagcgcgcgcaggtggtttcttaagtctgatgtgaaagcccacggctcaaccgtggagggtcattggaaactggggaacttgagtgcagaagaggaaagtggaattccaagtgtagcggtgaaatgcgtagatatttggaggaacaccagtggcgaaggcgactttctggtctgtaactgacactgaggcgcgaaagcgtggggagcaaacaggattagataccctggtagtccacgccgtaaacgatgagtgctaagtgttagagggtttccgccctttagtgctgcagctaacgcattaagcactccgcctggggagtacggtcgcaagactgaaactcaaaggaattgacgggggcccgcacaagcggtggagcatgtggtttaattcgaagcaacgcgaagaaccttaccaggtcttgacatcctctgacaaccctagagatagggctttccccttcgggggacagagtgacaggtggtgcatggttgtcgtcagctcgtgtcgtgagatgttgggttaagtcccgcaacgagcgcaacccttgatcttagttgccagcattcagttgggcactctaagatgactgccggtgacaaaccggaggaaggtggggatgacgtcaaatcatcatgccccttatgacctgggctacacacgtgctacaatggacggtacaaagggctgcaagaccgcgaggtttagccaatcccataaaaccgttctcagttcggattgtaggctgcaactcgcctacatgaagctggaatcgctagtaatcgcgnatcagcatgccgcggtgaatacgttcccgggccttgtacacaccgcccgtcacaccacgagagtttgtaaca"]
+actual_seqs = [seq.upper() for seq in actual_seqs]
+def task_3(sequences,rf):
+    def test_primer_validity(forward_primer,backward_primer):
+        for sequence in sequences:
+            product = PredictPCRProduct(forward_primer,backward_primer,sequence,rf)
+            if product is None:
+                return False
+        return True
+    ref_seq = sequences[0]
+    for primer_length in range(30,17,-1):
+        for i in range(0,len(ref_seq)-primer_length):
+            for j in range(0,len(ref_seq)-1-(i+primer_length-1)-primer_length):
+                fp = ref_seq[i:primer_length+i]
+                bp = reverse_complement(ref_seq)[j:primer_length+j]
 
+                fp = reverse_complement(fp)
+                bp = reverse_complement(bp)
+
+                if(test_primer_validity(fp,bp)):
+                    print(fp,bp)
 def LoadFastA(path):
     infile = open(path, 'r')
     seq = ""
@@ -103,40 +124,30 @@ def LoadFastA(path):
     for line in infile:
         seq += line[:-1]
     return seq
-    
-if __name__ == "__main__":
-   # stuff only to run when not called via 'import' here
-   from sklearn.metrics import r2_score
-   from sklearn.ensemble import RandomForestRegressor
-   import importlib
-   import os
-   import sys
 
-   from Bio.Seq import Seq
-   from sklearn.ensemble import RandomForestRegressor
+def set_up_testing_data():
+    infile = open("training_primers.txt", 'r')
+    infile.readline() # don't load headers
 
-   print("Running Task 1:")
-   
-   infile = open("training_primers.txt", 'r')
-   infile.readline() # don't load headers
-   primers = []
-   melting_points = []
-   features = []
-   st = time.time()
-   for line in infile:
+    primers = []
+    melting_points = []
+    features = []
+
+    for line in infile:
        Line = line.split()
        primers.append(Line[0])
        melting_points.append(float(Line[1]))
-       # calculate features
        features.append(CalculatePrimerFeatures(Line[0]))
-   feat_time = (time.time()-st)/(len(features)/1000)
-   # cross validation
-   how_many_folds = 10 
-   predictions = []
-   truth = []
-   my_len = len(features[-1])
-    
-   for fold in range(how_many_folds):
+
+    return features, melting_points
+
+def cross_validate(features, melting_points):
+    # cross validation
+    how_many_folds = 10 
+    predictions = []
+    truth = []
+
+    for fold in range(how_many_folds):
         #print ("Calculating Fold",fold)
         training_features = []
         training_outcomes = []
@@ -158,53 +169,61 @@ if __name__ == "__main__":
         fold_predictions = rf.predict(testing_features)
         truth += testing_outcomes
         predictions += list(fold_predictions)
-      
-           
-   #truth = np.array(truth)
-   #predictions = np.array(predictions)        
-   print("Task 1 Results:\n")
-   print("R2 Score:", r2_score(truth, predictions))
+        
+            
+    #truth = np.array(truth)
+    #predictions = np.array(predictions)        
+    print("Task 1 Results:\n")
+    print("R2 Score:", r2_score(truth, predictions))
 
 
+if __name__ == "__main__":
 
-   
-   """
-   Task 2:
-   Design a function to predict whether a product will be made in a PCR reaction.
-   Your function should take as input the template DNA and the two primers and 
-   return the product or 'None'.
 
-   This requires a local alignment function which is provided for you or you 
-   can use another implementation.
-    
-   There are test cases in PCR_product_test_cases.txt.
-   
-   """
-   task2_randomforest = RandomForestRegressor(n_estimators = 200)
-   task2_randomforest.fit(features, melting_points)
-   
-#    print(PredictPCRProduct("ACTG", "ACTG", "ACTCAGCGACTGC", task2_randomforest))
-#    print(PredictPCRProduct("TGGTGGGATGTCTTTCAACAGG", "AACTACGGAGAACTACAGCAACCT","ACGTCAGCGAGCGCTACGACGTGGTGGGATGTCTTTCAACAGGACGGACTGACGCGACGACTGACTGTAGGCTAGGTTGCTGTAGTTCTCCGTAGTTAGCTACGACGCATGCAGCTGCA", task2_randomforest))
-   assert PredictPCRProduct("TGGTGGGATGTCTTTCAACAGG", "AACTACGGAGAACTACAGCAACCT","ACGTCAGCGAGCGCTACGACGTGGTGGGATGTCTTTCAACAGGACGGACTGACGCGACGACTGACTGTAGGCTAGGTTGCTGTAGTTCTCCGTAGTTAGCTACGACGCATGCAGCTGCA", task2_randomforest) == "TGGTGGGATGTCTTTCAACAGGACGGACTGACGCGACGACTGACTGTAGGCTAGGTTGCTGTAGTTCTCCGTAGTT"
+    print("Running Task 1:")
+    features, melting_points = set_up_testing_data()
+    # cross_validate(features,melting_points)
 
-   
-   """
-   Task 3:
-   Design primers for a PCR reaction to distinguish between the three (strands)
-   types of DNA.  
-   
-   -Your primers should be between 18 and 35 bases long.  
-   -They should have at least 80% match to the DNA strand.
-   -Predicted melting points of any primers to be run in the same reaction
-   should be between 58.0 and 62.0 C.
-   -Products are distinguishable in length if their difference in length is >40
-   bases
-   -Your products should not be longer than 1000 bases.
-   
-   We are making predictions about the functionality of sets of primers.  We 
-   will synthesize your group's primers and test them in the lab later.
-     
-   """
+
+    """
+    Task 2:
+    Design a function to predict whether a product will be made in a PCR reaction.
+    Your function should take as input the template DNA and the two primers and 
+    return the product or 'None'.
+
+    This requires a local alignment function which is provided for you or you 
+    can use another implementation.
+
+    There are test cases in PCR_product_test_cases.txt.
+
+    """
+    task2_randomforest = RandomForestRegressor(n_estimators = 200)
+    task2_randomforest.fit(features, melting_points)
+
+    #    print(PredictPCRProduct("ACTG", "ACTG", "ACTCAGCGACTGC", task2_randomforest))
+    #    print(PredictPCRProduct("TGGTGGGATGTCTTTCAACAGG", "AACTACGGAGAACTACAGCAACCT","ACGTCAGCGAGCGCTACGACGTGGTGGGATGTCTTTCAACAGGACGGACTGACGCGACGACTGACTGTAGGCTAGGTTGCTGTAGTTCTCCGTAGTTAGCTACGACGCATGCAGCTGCA", task2_randomforest))
+    assert PredictPCRProduct("TGGTGGGATGTCTTTCAACAGG", "AACTACGGAGAACTACAGCAACCT","ACGTCAGCGAGCGCTACGACGTGGTGGGATGTCTTTCAACAGGACGGACTGACGCGACGACTGACTGTAGGCTAGGTTGCTGTAGTTCTCCGTAGTTAGCTACGACGCATGCAGCTGCA", task2_randomforest) == "TGGTGGGATGTCTTTCAACAGGACGGACTGACGCGACGACTGACTGTAGGCTAGGTTGCTGTAGTTCTCCGTAGTT"
+
+    task_3(actual_seqs,task2_randomforest)
+    """
+    Task 3:
+    Design primers for a PCR reaction to distinguish between the three (strands)
+    types of DNA.  
+
+    -Your primers should be between 18 and 35 bases long.  
+    -They should have at least 80% match to the DNA strand.
+    -Predicted melting points of any primers to be run in the same reaction
+    should be between 58.0 and 62.0 C.
+    -Products are distinguishable in length if their difference in length is >40
+    bases
+    -Your products should not be longer than 1000 bases.
+
+    We are making predictions about the functionality of sets of primers.  We 
+    will synthesize your group's primers and test them in the lab later.
+        
+    """
+
+
 
 def generatePrimers(sequences):
     """
@@ -252,7 +271,7 @@ def generatePrimers(sequences):
 
 test = ["TGCAGTCGCTCGCGATGCTGCACCACCCTACAGAAAGTTGTCCTGCCTGACTGCGCTGCTGACTGACATCCGATCCAACGACATCAAGAGGCATCAATCGATGCTGCGTACGTCGACGT", "TGCAGTCGCTCGCGATGCTGCACCACCCTACAGAAAGTTGTCCTGCCTGACTGCGCTGCTGACTGACATCCGATCCAACGACATCAAGAGGCATCAATCGATGCTGCGTACGTCGACGT", 
 "TGCAGTCGCTCGCGATGCTGCACCACCCTACAGAAAGTTGTCCTGCCTGACTGCGCTGCTGACTGACATCCGATCCAACGACATCAAGAGGCATCAATCGATGCTGCGTACGTCGACGT"]
-print(generatePrimers(test))
+# print(generatePrimers(test))
 
    
    
