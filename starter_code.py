@@ -85,8 +85,6 @@ def PredictPCRProduct(primer1, primer2, template_sequence, melting_point_rf, ski
             return None
             
     #Check for binding on both primers
-    # top_strand_match = get_smallest_index_match_on_template_sequence(template_sequence = template_sequence, primer = reverse_complement(primer1))    
-    # bottom_strand_match = len(template_sequence)-1-get_smallest_index_match_on_template_sequence(template_sequence = reverse_complement(template_sequence), primer = reverse_complement(primer2))
     top_strand_match = min(
         get_smallest_index_match_on_template_sequence(template_sequence = template_sequence, primer = reverse_complement(primer1)),
         get_smallest_index_match_on_template_sequence(template_sequence = template_sequence, primer = reverse_complement(primer2)))
@@ -98,8 +96,7 @@ def PredictPCRProduct(primer1, primer2, template_sequence, melting_point_rf, ski
     if top_strand_match>=bottom_strand_match or bottom_strand_match<0 or top_strand_match > 99999 or bottom_strand_match-top_strand_match>1000:
         return None # no overlap
     
-    
-    # print(template_sequence[top_strand_match:bottom_strand_match+1])
+
     return template_sequence[top_strand_match:bottom_strand_match+1]
 actual_seqs = ["tcccggatgttagcggcggacgggtgagtaacacgtgggtaacctgcctgtaagactgggataactccgggaaaccggagctaataccggatagttccttgaaccgcatggttcaaggatgaaagacggtttcggctgtcacttacagatggacccgcggcgcattagctagttggtgaggtaacggctcaccaaggcgacgatgcgtagccgacctgagagggtgatcggccacactgggactgagacacggcccagactcctacgggaggcagcagtagggaatcttccgcaatggacgaaagtctgacggagcaacgccgcgtgagtgatgaaggttttcggatcgtaaagctctgttgttagggaagaacaagtgcaagagtaactgcttgcaccttgacggtacctaaccagaaagccacggctaactacgtgccagcagccgcggtaatacgtaggtggcaagcgttgtccggAattattgggcgtAaagggctcgcaggcggtttcttaagtCtgatgtgaaagcccccggctcaaccggggagggtcattggaaactgggaaacttgagtgcagaagaggagagtggaattccacgtgtagcggtgaaatgcgtagagatgtggaggaacaccagtggcgaaggcgactctctggtctgtaactgacgctgaggagcgaaagcgtggggagcgaacaggattagataccctggtagtccacgccgtaaacgatgagtgctaagtgttagggggtttccgccccttagtgctgcagctaacgcattaagcactccgcctggggagtacggtcgcaagactgaaactcaaaggaattgacgggggcccgcacaagcggtggagcatgtggtttaattcgaagcaacgcgaagaaccttaccaggtcttgacatcctctgacaaccctagagatagggctttcccttcggggacagagtgacaggtggtgcatggttgtcgtcagctcgtgtcgtgagatgttgggttaagtcccgcaacgagcgcaacccttgatcttagttgccagcattcagttgggcactctaaggtgactgccggtgacaaaccggaggaaggtggggatgacgtcaaatcatcatgccccttatgacctgggctacacacgtgctacaatggacagaacaaagggctgcgagaccgcaaggtttagccaatcccacaaatctgttctcagttcggatcgcagtctgcaactcgactgcgtgaagctggaatcgctagtaatcgcggatcagcatgccgcggtgaatacgttcccgggccttgtacacaccgcccgtcacaccacgagagtttgcaacacccgaagtcggtgaggtaactttatggagccagcc","ggcgtgcctaatacatgcaagtcgagcggatcgatgggagcttgcnncntgagatcagcggcggacgggtgagtaacacgtgggtaacctgcctgtaagactgggataactccgggaaaccggggctaataccggataacacctacccccgcatgggggaaggttgaaaggtggcttcggctatcacttacagatggacccgcggcgcattagctagttggtgaggtaatggctcaccaaggcgacgatgcgtagccgacctgagagggtgatcggccacactgggactgagacacggcccagactcctacgggaggcagcagtagggaatcttccgcaatggacgaaagtctgacggagcaacgccgcgtgagtgaagaaggttttcggatcgtaaaactctgttgttagggaagaacaagtgccgttcgaatagggcggcgccttgacggtacctaaccagaaagccacggctaactacgtgccagcagccgcggtaatacgtaggtggcaagcgttgtccggaattattgggcgtaaagcgcgcgcaggtggtttcttaagtctgatgtgaaagcccacggctcaaccgtggagggtcattggaaactggggaacttgagtgcagaagaggaaagtggaattccaagtgtagcggtgaaatgcgtagatatttggaggaacaccagtggcgaaggcgactttctggtctgtaactgacactgaggcgcgaaagcgtggggagcaaacaggattagataccctggtagtccacgccgtaaacgatgagtgctaagtgttagagggtttccgccctttagtgctgcagctaacgcattaagcactccgcctggggagtacggtcgcaagactgaaactcaaaggaattgacgggggcccgcacaagcggtggagcatgtggtttaattcgaagcaacgcgaagaaccttaccaggtcttgacatcctctgacaaccctagagatagggctttccccttcgggggacagagtgacaggtggtgcatggttgtcgtcagctcgtgtcgtgagatgttgggttaagtcccgcaacgagcgcaacccttgatcttagttgccagcattcagttgggcactctaagatgactgccggtgacaaaccggaggaaggtggggatgacgtcaaatcatcatgccccttatgacctgggctacacacgtgctacaatggacggtacaaagggctgcaagaccgcgaggtttagccaatcccataaaaccgttctcagttcggattgtaggctgcaactcgcctacatgaagctggaatcgctagtaatcgcgnatcagcatgccgcggtgaatacgttcccgggccttgtacacaccgcccgtcacaccacgagagtttgtaaca"]
 actual_seqs = [seq.upper() for seq in actual_seqs]
@@ -229,48 +226,9 @@ if __name__ == "__main__":
     # cross_validate(features,melting_points)
 
 
-    """
-    Task 2:
-    Design a function to predict whether a product will be made in a PCR reaction.
-    Your function should take as input the template DNA and the two primers and 
-    return the product or 'None'.
-
-    This requires a local alignment function which is provided for you or you 
-    can use another implementation.
-
-    There are test cases in PCR_product_test_cases.txt.
-
-    """
     task2_randomforest = RandomForestRegressor(n_estimators = 200)
     task2_randomforest.fit(features, melting_points)
 
-    #    print(PredictPCRProduct("ACTG", "ACTG", "ACTCAGCGACTGC", task2_randomforest))
-    #    print(PredictPCRProduct("TGGTGGGATGTCTTTCAACAGG", "AACTACGGAGAACTACAGCAACCT","ACGTCAGCGAGCGCTACGACGTGGTGGGATGTCTTTCAACAGGACGGACTGACGCGACGACTGACTGTAGGCTAGGTTGCTGTAGTTCTCCGTAGTTAGCTACGACGCATGCAGCTGCA", task2_randomforest))
-    # assert PredictPCRProduct(reverse_complement("TGGTGGGATGTCTTTCAACAGG"), reverse_complement("AACTACGGAGAACTACAGCAACCT"),"ACGTCAGCGAGCGCTACGACGTGGTGGGATGTCTTTCAACAGGACGGACTGACGCGACGACTGACTGTAGGCTAGGTTGCTGTAGTTCTCCGTAGTTAGCTACGACGCATGCAGCTGCA", task2_randomforest) == "ACGGACTGACGCGACGACTGACTGTAGGCT"
-    # print(PredictPCRProduct("AAAGCCCTATCTCTAGGGTTGTC","ATGTTGGGTTAAGTCCCGCAACG",actual_seqs[0],task2_randomforest))
-    # print(PredictPCRProduct("AAAGCCCTATCTCTAGGGTTGTC","ATGTTGGGTTAAGTCCCGCAACG",actual_seqs[1],task2_randomforest))
-
     # task_3(actual_seqs,task2_randomforest)
-    task_5(actual_seqs,task2_randomforest)
-    """
-    Task 3:
-    Design primers for a PCR reaction to distinguish between the three (strands)
-    types of DNA.  
 
-    -Your primers should be between 18 and 35 bases long.  
-    -They should have at least 80% match to the DNA strand.
-    -Predicted melting points of any primers to be run in the same reaction
-    should be between 58.0 and 62.0 C.
-    -Products are distinguishable in length if their difference in length is >40
-    bases
-    -Your products should not be longer than 1000 bases.
-
-    We are making predictions about the functionality of sets of primers.  We 
-    will synthesize your group's primers and test them in the lab later.
-        
-    """
-
-
-
-   
-# R^2 - how good it is compared to a flat line .8 okay
+    # task_5(actual_seqs,task2_randomforest)
