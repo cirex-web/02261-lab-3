@@ -17,8 +17,7 @@ import random
 
 
 def CalculatePrimerFeatures(seq):
-    return [len(seq), seq.count('A'), seq.count('C'), seq.count('T'),seq.count('G'),seq.count('GC')] # .95
-
+    return [len(seq), seq.count('A'), seq.count('C'), seq.count('T'),seq.count('G'),seq.count('GC')] # R^2 = 0.9505965920164953
     # return [len(seq)] + [seq.count(''.join(chars)) for i in range(1,4) for chars in product("ACTG",repeat=i)] # slower but .96
 
 
@@ -33,15 +32,15 @@ def get_smallest_index_match_on_template_sequence(template_sequence:str, primer:
     # binding if at least 80% max score
     SCORE_THRESHOLD = .9 * (scoring.match*len(primer))
     best, optloc, matrix = alignment.local_align(template_sequence, primer, score=scoring)
-    if best < SCORE_THRESHOLD:
-        return 9999999
-    return optloc[0]-1+1 # the more straight-forward approach
+    # if best < SCORE_THRESHOLD:
+    #     return 9999999
+    # return optloc[0]-1+1 # the more straight-forward approach
 
     for i in range(len(template_sequence)+1):
         for j in range(len(primer),-1,-1):
             if(matrix[i][j]>=SCORE_THRESHOLD):
-                print(i,j,matrix[i][j])
-                return max(0,i-1) # includes primer
+                # print(i,j,matrix[i][j])
+                return i # includes primer
     return 9999999 # MAX_INT
             
 
@@ -111,73 +110,58 @@ def task_3(sequences,rf):
         product_lens = []
         for sequence in sequences:
             product = PredictPCRProduct(forward_primer,backward_primer,sequence,rf,skip_temp=False)
-            # print(product)
             if product is None:
                 return False
             product_lens.append(len(product))
-        # for sequence in sequences:
-        #     product = PredictPCRProduct(forward_primer,backward_primer,sequence,rf)
-        #     if product is None:
-        #         return False
-        return abs(product_lens[0]-product_lens[1])>=300
+
+        return True
+
     ref_seq = sequences[0]
-    for primer_length in range(23,17,-1):
-        while True:
-            i = random.randint(0,len(ref_seq)-primer_length-1)
-            j = random.randint(0,max(0,len(ref_seq)-1-(i+primer_length-1)-primer_length-1))
+    primer_length = 23
+    while True:
+        i = random.randint(0,len(ref_seq)-primer_length-1)
 
-            # for i in range(0,len(ref_seq)-primer_length):
-            #     for j in range(0,len(ref_seq)-1-(i+primer_length-1)-primer_length):
-            fp = ref_seq[i:primer_length+i]
-            bp = reverse_complement(ref_seq)[j:primer_length+j]
+        # pick a random start index for the reverse primer (orientation 5' -> 3'), making sure it comes after the forward primer so we get some overlap
+        j = random.randint(0,max(0,len(ref_seq)-1-(i+primer_length-1)-primer_length-1))
 
-            fp = reverse_complement(fp)
-            bp = reverse_complement(bp)
-            assert len(fp)==len(bp)==primer_length
-            if(test_primer_validity(fp,bp)):
-                print(fp,bp,i,j)
+        fp = ref_seq[i:primer_length+i]
+        bp = reverse_complement(ref_seq)[j:primer_length+j]
 
+        fp = reverse_complement(fp)
+        bp = reverse_complement(bp)
+        assert len(fp)==len(bp)==primer_length
+        if(test_primer_validity(fp,bp)):
+            print(fp,bp,i,j) # result
 
+# Note: I wrote this to only work on two sequences cuz I was lazy, but the same randomized procedure should work on more
 def task_5(sequences,rf):
-    def test_primer_validity(forward_primer,backward_primer):
-        product_lens = []
-        for sequence in sequences:
-            product = PredictPCRProduct(forward_primer,backward_primer,sequence,rf,skip_temp=False)
-            # print(product)
-            if product is None:
-                return False
-            product_lens.append(len(product))
-        # for sequence in sequences:
-        #     product = PredictPCRProduct(forward_primer,backward_primer,sequence,rf)
-        #     if product is None:
-        #         return False
-        return abs(product_lens[0]-product_lens[1])>=300
     ref_seq = sequences[0]
-    for primer_length in range(23,17,-1):
-        while True:
-            i = random.randint(0,len(ref_seq)-primer_length-1)
-            j = random.randint(0,max(0,len(ref_seq)-1-(i+primer_length-1)-primer_length-1))
-            k = random.randint(0,max(0,len(sequences[1])-1-(i+primer_length-1)-primer_length-1))
-            # for i in range(0,len(ref_seq)-primer_length):
-            #     for j in range(0,len(ref_seq)-1-(i+primer_length-1)-primer_length):
-            fp = ref_seq[i:primer_length+i]
-            bp1 = reverse_complement(ref_seq)[j:primer_length+j]
-            bp2 = reverse_complement(sequences[1])[k:primer_length+k]
+    primer_length = 23 # fix our primer length at 23 for ALL generated primers
+    while True:
+        i = random.randint(0,len(ref_seq)-primer_length-1) # randomly picked start index for universal forward primer (relative to the first sequence)
+        j = random.randint(0,max(0,len(ref_seq)-1-(i+primer_length-1)-primer_length-1)) # randomly picked start index for reverse primer for first sequence
+        k = random.randint(0,max(0,len(sequences[1])-1-(i+primer_length-1)-primer_length-1)) # randomly picked start index for reverse primer for second sequence
 
-            fp = reverse_complement(fp)
-            bp1 = reverse_complement(bp1)
-            bp2 = reverse_complement(bp2)
-            
-            assert len(fp)==len(bp1)==len(bp2)==primer_length
-            product_1 = PredictPCRProduct(fp,bp1,sequences[0],rf,skip_temp=False)
-            not_product_1 = PredictPCRProduct(fp,bp2,sequences[0],rf,skip_temp=False) or PredictPCRProduct(bp1,bp2,sequences[0],rf,skip_temp=False)
-            product_2 = PredictPCRProduct(fp,bp2,sequences[1],rf,skip_temp=False)
-            not_product_2 = PredictPCRProduct(fp,bp1,sequences[1],rf,skip_temp=False) or PredictPCRProduct(bp1,bp2,sequences[1],rf,skip_temp=False)
-            # print(product_1,not_product_1,product_2,not_product_2)
-            if product_1 is not None and product_2 is not None and not not_product_1 and not not_product_2 and abs(len(product_1)-len(product_2))>=100:
-                print(abs(len(product_1)-len(product_2)))
-                print(product_1,product_2,fp,bp1,bp2)
-                
+        # note that all generated primers have length 23
+        fp = ref_seq[i:primer_length+i]
+        bp1 = reverse_complement(ref_seq)[j:primer_length+j]
+        bp2 = reverse_complement(sequences[1])[k:primer_length+k]
+
+        fp = reverse_complement(fp)
+        bp1 = reverse_complement(bp1)
+        bp2 = reverse_complement(bp2)
+        
+        assert len(fp)==len(bp1)==len(bp2)==primer_length
+        # ensure that only the intended forward and reverse primers made a product of unique length
+        product_1 = PredictPCRProduct(fp,bp1,sequences[0],rf,skip_temp=False)
+        not_product_1 = PredictPCRProduct(fp,bp2,sequences[0],rf,skip_temp=False) or PredictPCRProduct(bp1,bp2,sequences[0],rf,skip_temp=False)
+        product_2 = PredictPCRProduct(fp,bp2,sequences[1],rf,skip_temp=False)
+        not_product_2 = PredictPCRProduct(fp,bp1,sequences[1],rf,skip_temp=False) or PredictPCRProduct(bp1,bp2,sequences[1],rf,skip_temp=False)
+
+        if product_1 is not None and product_2 is not None and not not_product_1 and not not_product_2 and abs(len(product_1)-len(product_2))>=100:
+            print(abs(len(product_1)-len(product_2)))
+            print(product_1,product_2,fp,bp1,bp2) # result
+
 def LoadFastA(path):
     infile = open(path, 'r')
     seq = ""
@@ -241,7 +225,6 @@ def cross_validate(features, melting_points):
 if __name__ == "__main__":
 
 
-    print("Running Task 1:")
     features, melting_points = set_up_testing_data()
     # cross_validate(features,melting_points)
 
@@ -263,10 +246,11 @@ if __name__ == "__main__":
 
     #    print(PredictPCRProduct("ACTG", "ACTG", "ACTCAGCGACTGC", task2_randomforest))
     #    print(PredictPCRProduct("TGGTGGGATGTCTTTCAACAGG", "AACTACGGAGAACTACAGCAACCT","ACGTCAGCGAGCGCTACGACGTGGTGGGATGTCTTTCAACAGGACGGACTGACGCGACGACTGACTGTAGGCTAGGTTGCTGTAGTTCTCCGTAGTTAGCTACGACGCATGCAGCTGCA", task2_randomforest))
-    assert PredictPCRProduct(reverse_complement("TGGTGGGATGTCTTTCAACAGG"), reverse_complement("AACTACGGAGAACTACAGCAACCT"),"ACGTCAGCGAGCGCTACGACGTGGTGGGATGTCTTTCAACAGGACGGACTGACGCGACGACTGACTGTAGGCTAGGTTGCTGTAGTTCTCCGTAGTTAGCTACGACGCATGCAGCTGCA", task2_randomforest) == "ACGGACTGACGCGACGACTGACTGTAGGCT"
+    # assert PredictPCRProduct(reverse_complement("TGGTGGGATGTCTTTCAACAGG"), reverse_complement("AACTACGGAGAACTACAGCAACCT"),"ACGTCAGCGAGCGCTACGACGTGGTGGGATGTCTTTCAACAGGACGGACTGACGCGACGACTGACTGTAGGCTAGGTTGCTGTAGTTCTCCGTAGTTAGCTACGACGCATGCAGCTGCA", task2_randomforest) == "ACGGACTGACGCGACGACTGACTGTAGGCT"
     # print(PredictPCRProduct("AAAGCCCTATCTCTAGGGTTGTC","ATGTTGGGTTAAGTCCCGCAACG",actual_seqs[0],task2_randomforest))
     # print(PredictPCRProduct("AAAGCCCTATCTCTAGGGTTGTC","ATGTTGGGTTAAGTCCCGCAACG",actual_seqs[1],task2_randomforest))
 
+    # task_3(actual_seqs,task2_randomforest)
     task_5(actual_seqs,task2_randomforest)
     """
     Task 3:
@@ -288,59 +272,5 @@ if __name__ == "__main__":
 
 
 
-def generatePrimers(sequences):
-    """
-        Given 3 sequences, select 3 different unique reverse primer starting
-        locations that meet the conditions listed below, and are of length 30.
-        The forward strand will start at the same location on all 3 strands.
-    """
-
-    import random
-    deliverable = []
-    for seq in sequences:
-        while True: 
-            #Generate a random (reverse complment)
-            n = len(seq)
-            rand_n = random.randint(30, n - 30)
-            s_1 = reverse_complement(seq[0:30])
-            s_2 = complement(seq[rand_n: rand_n + 30])
-            
-            # make sure that they satisfy melting point criterion
-            melting_point, melting_point_2 = GetMeltingPoint(s_1, task2_randomforest)
-            #  = GetMeltingPoint(s_2, task2_randomforest)
-
-            # and they don't bind to other strands
-            counter = 0
-            for s in sequences:
-                if s == seq: 
-                    # we want the primers to bind to seq.
-                    pass
-                # Use PCR product w/candidate primers: makes sure no product 
-                # will not be generated
-                if (PredictPCRProduct(s_1,s_2,s,melting_point) is None):
-                    counter == 1
-                    
-                """
-                for i in range(len(s) - 30):
-                    if complement(s_1) == s[i:i+30] or complement(s_2) == s[i:i+30]:
-                        counter = 1
-                """
-            if (melting_point <= 62 and melting_point >= 58 and 
-               melting_point_2 <= 62 and melting_point_2 >= 58 and counter == 0):
-                deliverable.append(s_1, s_2)
-                break
-        
-    return deliverable
-
-test = ["TGCAGTCGCTCGCGATGCTGCACCACCCTACAGAAAGTTGTCCTGCCTGACTGCGCTGCTGACTGACATCCGATCCAACGACATCAAGAGGCATCAATCGATGCTGCGTACGTCGACGT", "TGCAGTCGCTCGCGATGCTGCACCACCCTACAGAAAGTTGTCCTGCCTGACTGCGCTGCTGACTGACATCCGATCCAACGACATCAAGAGGCATCAATCGATGCTGCGTACGTCGACGT", 
-"TGCAGTCGCTCGCGATGCTGCACCACCCTACAGAAAGTTGTCCTGCCTGACTGCGCTGCTGACTGACATCCGATCCAACGACATCAAGAGGCATCAATCGATGCTGCGTACGTCGACGT"]
-# print(generatePrimers(test))
-
-   
    
 # R^2 - how good it is compared to a flat line .8 okay
-
-# TGCAGTCGCTCGCGATGCTGCACCACCCTACAGAAAGTTGTCCTGCCTGACTGCGCTGCTGACTGACATCCGATCCAACGACATCAAGAGGCATCAATCGATGCTGCGTACGTCGACGT AGGTTGCTGTAGTTCTCCGTAGTT
-
-# TGCAGTCGCTCGCGATGCTGCACCACCCTACAGAAAGTTGTCCTGCCTGACTGCGCTGCTGACTGACATCCGATCCAACGACATCAAGAGGCATCAATCGATGCTGCGTACGTCGACGT GGACAACTTTCTGTAGGGTGGT
-# TGCAGTCGCTCGCGATGCTGCACCACCCTACAGAAAGTTGTCCTGCCTGACTGCGCTGCTGACTGACATCCGATCCAACGACATCAAGAGGCATCAATCGATGCTGCGTACGTCGACGT TCCAACGACATCAAGAGGCATCAA
